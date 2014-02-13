@@ -108,7 +108,7 @@ class gettext_reader {
     // Caching can be turned off
     $this->enable_cache = $enable_cache;
 	
-	$this->memcache_key_prefix = "gettext" . $local_str . "_";
+	$this->memcache_key_prefix = "gettext" . $locale_str . "_";
 
     $MAGIC1 = "\x95\x04\x12\xde";
     $MAGIC2 = "\xde\x12\x04\x95";
@@ -148,22 +148,22 @@ class gettext_reader {
 	$m = new Memcached();
     /* get original and translations tables */
     if (!is_array($this->table_originals)) {
-	  if (!($this->table_originals = $m->get(memcache_key_prefix . "table_originals"))){
+	  if (!($this->table_originals = $m->get($this->memcache_key_prefix . "table_originals"))){
         $this->STREAM->seekto($this->originals);
         $this->table_originals = $this->readintarray($this->total * 2);
-		$m->set(memcache_key_prefix . "table_originals", $this->table_originals);
+		$m->set($this->memcache_key_prefix . "table_originals", $this->table_originals);
 	  }
     }
     if (!is_array($this->table_translations)) {
-	  if (!($this->table_translations = $m->get(memcache_key_prefix . "table_translations"))){
+	  if (!($this->table_translations = $m->get($this->memcache_key_prefix . "table_translations"))){
         $this->STREAM->seekto($this->translations);
         $this->table_translations = $this->readintarray($this->total * 2);
-		$m->set(memcache_key_prefix . "table_translations", $this->table_translations);
+		$m->set($this->memcache_key_prefix . "table_translations", $this->table_translations);
 	  }
     }
 
     if ($this->enable_cache) {
-	  if (!($this->cache_translations = $m->get(memcache_key_prefix . "cache_translations"))){
+	  if (!($this->cache_translations = $m->get($this->memcache_key_prefix . "cache_translations"))){
         $this->cache_translations = array ();
         /* read all strings in the cache */
         for ($i = 0; $i < $this->total; $i++) {
@@ -173,7 +173,7 @@ class gettext_reader {
           $translation = $this->STREAM->read($this->table_translations[$i * 2 + 1]);
           $this->cache_translations[$original] = $translation;
         }
-		$m->set(memcache_key_prefix . "cache_translations", $this->cache_translations);
+		$m->set($this->memcache_key_prefix . "cache_translations", $this->cache_translations);
 	  }
     }
   }
