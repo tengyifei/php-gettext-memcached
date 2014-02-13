@@ -128,6 +128,7 @@ function _get_reader($domain=null, $category=5, $enable_cache=true) {
         foreach ($locale_names as $locale) {
           $full_path = $bound_path . $locale . "/" . $subpath;
           if (file_exists($full_path)) {
+		    $locale_str = $locale;
             $input = new FileReader($full_path);
             break;
           }
@@ -138,6 +139,7 @@ function _get_reader($domain=null, $category=5, $enable_cache=true) {
           $text_domains[$domain] = new domain();
         }
         $text_domains[$domain]->l10n = new gettext_reader($input,
+														  $locale_str,
                                                           $enable_cache);
     }
     return $text_domains[$domain]->l10n;
