@@ -50,7 +50,8 @@ class gettext_reader {
   var $table_translations = NULL;  // table for translated strings (offsets)
   var $cache_translations = NULL;  // original -> translation mapping
   var $memcache_key_prefix = NULL; //prefix used when looking up memcached
-
+  var $m = NULL;  //memcache object
+  
   /* Methods */
 
 
@@ -92,6 +93,20 @@ class gettext_reader {
       }
   }
 
+  function load_tables_memcache(){
+    if (!$this->m) {
+	  $this->m = new Memcached();
+	}
+	if ($this->table_originals = $this->m->get($this->memcache_key_prefix . "tb_orig")){
+	  if ($this->table_translations = $this->m->get($this->memcache_key_prefix . "tb_trans")){
+	    if ($this->cache_translations = $this->m->get($this->memcache_key_prefix . "cc_trans")){
+		  return true;
+		}
+	  }
+	}
+	return false;
+  }
+  
   /**
    * Constructor
    *
@@ -99,16 +114,18 @@ class gettext_reader {
    * @param boolean enable_cache Enable or disable caching of strings (default on)
    */
   function gettext_reader($Reader, $locale_str, $enable_cache = true) {
+    // Caching can be turned off
+    $this->enable_cache = $enable_cache;
+	
+	$this->memcache_key_prefix = "lang_" . $locale_str . "_";
+	if ($this->load_tables_memcache()) return true;
+	
+	if ($Reader) $Reader = new FileReader($Reader);
     // If there isn't a StreamReader, turn on short circuit mode.
     if (! $Reader || isset($Reader->error) ) {
       $this->short_circuit = true;
       return;
     }
-
-    // Caching can be turned off
-    $this->enable_cache = $enable_cache;
-	
-	$this->memcache_key_prefix = "gettext" . $locale_str . "_";
 
     $MAGIC1 = "\x95\x04\x12\xde";
     $MAGIC2 = "\xde\x12\x04\x95";
@@ -145,36 +162,33 @@ class gettext_reader {
       is_array($this->table_translations))
       return;
 	  
-	$m = new Memcached();
+	if (!$this->m) {
+	  $this->m = new Memcached();
+	}
+	  
     /* get original and translations tables */
     if (!is_array($this->table_originals)) {
-	  if (!($this->table_originals = $m->get($this->memcache_key_prefix . "table_originals"))){
-        $this->STREAM->seekto($this->originals);
-        $this->table_originals = $this->readintarray($this->total * 2);
-		$m->set($this->memcache_key_prefix . "table_originals", $this->table_originals);
-	  }
+      $this->STREAM->seekto($this->originals);
+      $this->table_originals = $this->readintarray($this->total * 2);
+      $this->m->set($this->memcache_key_prefix . "tb_orig", $this->table_originals);
     }
     if (!is_array($this->table_translations)) {
-	  if (!($this->table_translations = $m->get($this->memcache_key_prefix . "table_translations"))){
-        $this->STREAM->seekto($this->translations);
-        $this->table_translations = $this->readintarray($this->total * 2);
-		$m->set($this->memcache_key_prefix . "table_translations", $this->table_translations);
-	  }
+      $this->STREAM->seekto($this->translations);
+      $this->table_translations = $this->readintarray($this->total * 2);
+	  $this->m->set($this->memcache_key_prefix . "tb_trans", $this->table_translations);
     }
 
     if ($this->enable_cache) {
-	  if (!($this->cache_translations = $m->get($this->memcache_key_prefix . "cache_translations"))){
-        $this->cache_translations = array ();
-        /* read all strings in the cache */
-        for ($i = 0; $i < $this->total; $i++) {
-          $this->STREAM->seekto($this->table_originals[$i * 2 + 2]);
-          $original = $this->STREAM->read($this->table_originals[$i * 2 + 1]);
-          $this->STREAM->seekto($this->table_translations[$i * 2 + 2]);
-          $translation = $this->STREAM->read($this->table_translations[$i * 2 + 1]);
-          $this->cache_translations[$original] = $translation;
-        }
-		$m->set($this->memcache_key_prefix . "cache_translations", $this->cache_translations);
-	  }
+      $this->cache_translations = array ();
+      /* read all strings in the cache */
+      for ($i = 0; $i < $this->total; $i++) {
+        $this->STREAM->seekto($this->table_originals[$i * 2 + 2]);
+        $original = $this->STREAM->read($this->table_originals[$i * 2 + 1]);
+        $this->STREAM->seekto($this->table_translations[$i * 2 + 2]);
+        $translation = $this->STREAM->read($this->table_translations[$i * 2 + 1]);
+        $this->cache_translations[$original] = $translation;
+      }
+	  $this->m->set($this->memcache_key_prefix . "cc_trans", $this->cache_translations);
     }
   }
 

@@ -124,12 +124,13 @@ function _get_reader($domain=null, $category=5, $enable_cache=true) {
         $subpath = $LC_CATEGORIES[$category] ."/$domain.mo";
 
         $locale_names = get_list_of_locales($locale);
-        $input = null;
+        $input = null;	//if no .mo file found, then short-circuit
+		$locale_str = null;
         foreach ($locale_names as $locale) {
           $full_path = $bound_path . $locale . "/" . $subpath;
           if (file_exists($full_path)) {
 		    $locale_str = $locale;
-            $input = new FileReader($full_path);
+            $input = $full_path;
             break;
           }
         }
