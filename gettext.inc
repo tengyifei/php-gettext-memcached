@@ -176,8 +176,8 @@ function _get_codeset($domain=null) {
 /**
  * Convert the given string to the encoding set by bind_textdomain_codeset.
  */
-function _encode($text) {
-  $target_encoding = _get_codeset();
+function _encode($text, $domain = NULL) {
+  $target_encoding = _get_codeset($domain);
   if (function_exists("mb_detect_encoding")) {
     $source_encoding = mb_detect_encoding($text);
     if ($source_encoding != $target_encoding)
@@ -301,7 +301,7 @@ function _ngettext($singular, $plural, $number) {
  */
 function _dgettext($domain, $msgid) {
     $l10n = _get_reader($domain);
-    return _encode($l10n->translate($msgid));
+    return _encode($l10n->translate($msgid), $domain);
 }
 
 /**
@@ -309,7 +309,7 @@ function _dgettext($domain, $msgid) {
  */
 function _dngettext($domain, $singular, $plural, $number) {
     $l10n = _get_reader($domain);
-    return _encode($l10n->ngettext($singular, $plural, $number));
+    return _encode($l10n->ngettext($singular, $plural, $number), $domain);
 }
 
 /**
@@ -317,7 +317,7 @@ function _dngettext($domain, $singular, $plural, $number) {
  */
 function _dcgettext($domain, $msgid, $category) {
     $l10n = _get_reader($domain, $category);
-    return _encode($l10n->translate($msgid));
+    return _encode($l10n->translate($msgid), $domain);
 }
 /**
  * Plural version of dcgettext.
@@ -340,7 +340,7 @@ function _pgettext($context, $msgid) {
  */
 function _dpgettext($domain, $context, $msgid) {
     $l10n = _get_reader($domain);
-    return _encode($l10n->pgettext($context, $msgid));
+    return _encode($l10n->pgettext($context, $msgid), $domain);
 }
 
 /**
@@ -348,7 +348,7 @@ function _dpgettext($domain, $context, $msgid) {
  */
 function _dcpgettext($domain, $context, $msgid, $category) {
     $l10n = _get_reader($domain, $category);
-    return _encode($l10n->pgettext($context, $msgid));
+    return _encode($l10n->pgettext($context, $msgid), $domain);
 }
 
 /**
@@ -364,7 +364,7 @@ function _npgettext($context, $singular, $plural) {
  */
 function _dnpgettext($domain, $context, $singular, $plural) {
     $l10n = _get_reader($domain);
-    return _encode($l10n->npgettext($context, $singular, $plural));
+    return _encode($l10n->npgettext($context, $singular, $plural), $domain);
 }
 
 /**
@@ -372,7 +372,7 @@ function _dnpgettext($domain, $context, $singular, $plural) {
  */
 function _dcnpgettext($domain, $context, $singular, $plural, $category) {
     $l10n = _get_reader($domain, $category);
-    return _encode($l10n->npgettext($context, $singular, $plural));
+    return _encode($l10n->npgettext($context, $singular, $plural), $domain);
 }
 
 
